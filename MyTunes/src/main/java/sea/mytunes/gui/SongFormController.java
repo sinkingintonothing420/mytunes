@@ -37,7 +37,10 @@ public class SongFormController
 
     @FXML
     private void clickChooseFile()
+
+
     {
+
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Choose a song file");
         chooser.getExtensionFilters().add(
