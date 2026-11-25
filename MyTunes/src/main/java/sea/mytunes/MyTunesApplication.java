@@ -12,7 +12,7 @@ public class MyTunesApplication extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(MyTunesApplication.class.getResource("MyTunesView.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        stage.setTitle("NotMyTues");
+        stage.setTitle("MyTunes");
         stage.setScene(scene);
         stage.show();
     }

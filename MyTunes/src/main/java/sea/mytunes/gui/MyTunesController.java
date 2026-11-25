@@ -31,7 +31,6 @@ public class MyTunesController {
     @FXML
     private void initialize()
     {
-
         System.out.println(colTitle.getText());
     }
 
@@ -46,7 +45,8 @@ public class MyTunesController {
         {
             // Find the FXML file created in Scene Builder.
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/sea/mytunes/SongForm.fxml"));
+                    getClass().getResource("/sea/mytunes/SongForm.fxml")
+            );
 
             // Load the form into a new window.
             Stage formStage = new Stage();
@@ -60,9 +60,8 @@ public class MyTunesController {
             formStage.initModality(Modality.WINDOW_MODAL);
             formStage.show();
 
-        }
-
-        catch(IOException e) {
+        } catch(IOException e)
+        {
             // Show an error to the user if the form cannot be loaded.
             new Alert(Alert.AlertType.ERROR, "Could not open the song form.").showAndWait();
         }
