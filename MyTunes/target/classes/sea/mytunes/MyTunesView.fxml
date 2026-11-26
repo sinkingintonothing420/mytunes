@@ -12,7 +12,6 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="sea.mytunes.gui.MyTunesController">
    <top>
       <HBox alignment="CENTER_LEFT" fillHeight="false" prefHeight="75.0" prefWidth="200.0" spacing="12.0" BorderPane.alignment="CENTER">
@@ -87,8 +86,8 @@
             <Label text="All songs" />
             <HBox prefHeight="35.0" prefWidth="200.0" spacing="8.0">
                <children>
-                  <TextField promptText="Search title or artist..." HBox.hgrow="ALWAYS" />
-                  <Button mnemonicParsing="false" text="Filter" />
+                  <TextField fx:id="txtSearch" promptText="Search title or artist..." HBox.hgrow="ALWAYS" />
+                  <Button fx:id="btnFilter" mnemonicParsing="false" onAction="#clickFilter" text="Filter" />
                </children>
             </HBox>
             <TableView fx:id="tableSongs" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
@@ -96,14 +95,14 @@
                 <TableColumn fx:id="colTitle" prefWidth="155.0" text="Title" />
                 <TableColumn fx:id="colArtist" prefWidth="150.0" text="Artist" />
                   <TableColumn fx:id="colCategory" prefWidth="100.0" text="Category" />
-                  <TableColumn fx:id="colTime" prefWidth="60.0" text="Time" />
+                  <TableColumn fx:id="colTime" prefWidth="60.0" text="Time" style="-fx-alignment: CENTER;" />
               </columns>
             </TableView>
             <HBox alignment="CENTER_LEFT" prefHeight="35.0" prefWidth="200.0" spacing="8.0">
                <children>
                   <Button mnemonicParsing="false" onAction="#clickNewSong" text="New" />
-                  <Button mnemonicParsing="false" text="Edit" />
-                  <Button mnemonicParsing="false" text="Delete" />
+                  <Button mnemonicParsing="false" onAction="#clickEditSong" text="Edit" />
+                  <Button mnemonicParsing="false" onAction="#clickDeleteSong" text="Delete" />
                </children>
             </HBox>
          </children>

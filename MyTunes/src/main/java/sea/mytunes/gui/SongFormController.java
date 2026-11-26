@@ -2,9 +2,11 @@ package sea.mytunes.gui;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
+import sea.mytunes.be.Song;
 
 import java.io.File;
 
@@ -37,8 +39,6 @@ public class SongFormController
 
     @FXML
     private void clickChooseFile()
-
-
     {
 
         FileChooser chooser = new FileChooser();
@@ -56,14 +56,57 @@ public class SongFormController
         }
     }
 
+    private Song savedSong;
+
+    public Song getSavedSong()
+    {
+        return savedSong;
+    }
+
+    // Fill the form with the values of the selected song.
+    public void fillForm(Song song)
+    {
+        txtTitle.setText(song.getTitle());
+        txtArtist.setText(song.getArtist());
+        txtCategory.setText(song.getCategory());
+        txtTime.setText(song.getTime());
+        txtFile.setText(song.getFilePath());
+    }
+
     @FXML
     private void clickSave()
     {
-        // Print the form values to check that they are read correctly.
-        System.out.println("Title: " + txtTitle.getText());
-        System.out.println("Artist: " + txtArtist.getText());
-        System.out.println("Category: " + txtCategory.getText());
-        System.out.println("Time: " + txtTime.getText());
-        System.out.println("File: " + txtFile.getText());
+
+        // Check the form before creating the song.
+        if (txtTitle.getText().isBlank()
+                || txtArtist.getText().isBlank()
+                || txtCategory.getText().isBlank()
+                || txtFile.getText().isBlank())
+        {
+            new Alert(Alert.AlertType.WARNING,
+                    "Please enter a title, artist and category, and choose an audio file.")
+                    .showAndWait();
+            return;
+        }
+
+        if (!txtTime.getText().trim().matches("[0-9]+:[0-5][0-9]"))
+        {
+            new Alert(Alert.AlertType.WARNING,
+                    "Enter the duration as minutes:seconds, for example 3:15.")
+                    .showAndWait();
+            return;
+        }
+
+        // Create a song from the values in the form.
+        savedSong = new Song(
+                txtTitle.getText(),
+                txtArtist.getText(),
+                txtCategory.getText(),
+                txtTime.getText(),
+                txtFile.getText()
+        );
+
+        // Close the form after creating the song.
+        txtTitle.getScene().getWindow().hide();
     }
 }
