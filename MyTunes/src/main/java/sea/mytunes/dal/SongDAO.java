@@ -27,7 +27,7 @@ public class SongDAO {
                             rs.getString("title"),
                             rs.getString("artist"),
                             rs.getString("category"),
-                            rs.getInt("time"),
+                            rs.getString("time"),
                             null); // need to fix
 
                         songs.add(song);
@@ -46,7 +46,7 @@ public class SongDAO {
                 stmt.setString(1, song.getTitle());
                 stmt.setString(2, song.getArtist());
                 stmt.setString(3, song.getCategory());
-                stmt.setInt(4, song.getTime());
+                stmt.setString(4, song.getTime());
                 stmt.executeUpdate();
             }
         }
@@ -60,7 +60,7 @@ public class SongDAO {
                     stmt.setString(1, song.getTitle());
                     stmt.setString(2, song.getArtist());
                     stmt.setString(3, song.getCategory());
-                    stmt.setInt(4, song.getTime());
+                    stmt.setString(4, song.getTime());
                     stmt.setInt(5, songId);
                     stmt.executeUpdate();
 
