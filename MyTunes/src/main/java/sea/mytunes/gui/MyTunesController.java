@@ -28,18 +28,28 @@ public class MyTunesController
     @FXML private TableColumn<Song, String> colArtist;
     @FXML private TableColumn<Song, String> colCategory;
     @FXML private TableColumn<Song, String> colTime;
-    @FXML private TableView<String> tablePlaylists;
-    @FXML private TableColumn<String, String> colPlaylistName;
-    @FXML private TableColumn<String, String> colPlaylistSongs;
-    @FXML private TableColumn<String, String> colPlaylistTime;
+    @FXML private TableView<PlaylistRow> tablePlaylists;
+    @FXML private TableColumn<PlaylistRow, String> colPlaylistName;
+    @FXML private TableColumn<PlaylistRow, String> colPlaylistSongs;
+    @FXML private TableColumn<PlaylistRow, String> colPlaylistTime;
     // This list will display the titles in the selected playlist.
     @FXML private ListView<String> listPlaylistSongs;
 
     // Keep every song here, even when the filter hides some rows.
     private final ArrayList<Song> allSongs = new ArrayList<>();
 
-    // Keep the songs added to the test playlist.
-    private final List<Song> testPlaylistSongs = new ArrayList<>();
+    // Each playlist row keeps its own list of songs.
+    private static class PlaylistRow
+    {
+        private final String name;
+        private final List<Song> songs;
+
+        private PlaylistRow(String name, List<Song> songs)
+        {
+            this.name = name;
+            this.songs = songs;
+        }
+    }
 
 
     // An empty search means the table shows all songs.
@@ -78,14 +88,20 @@ public class MyTunesController
 
         // Show the name stored in each row.
         colPlaylistName.setCellValueFactory(cell ->
-                new SimpleStringProperty(cell.getValue()));
+                new SimpleStringProperty(cell.getValue().name));
 
         // Display the song count and total duration in the playlist table.
         colPlaylistSongs.setCellValueFactory(cell ->
-                new SimpleStringProperty(String.valueOf(testPlaylistSongs.size())));
+                new SimpleStringProperty(String.valueOf(cell.getValue().songs.size())));
 
         colPlaylistTime.setCellValueFactory(cell ->
-                new SimpleStringProperty(getPlaylistTime(testPlaylistSongs)));
+                new SimpleStringProperty(getPlaylistTime(cell.getValue().songs)));
+
+        tablePlaylists.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldPlaylist, selectedPlaylist) ->
+                        showPlaylistSongs(selectedPlaylist == null
+                                ? List.of()
+                                : selectedPlaylist.songs));
     }
 
     private long toSeconds(String time) {
@@ -341,7 +357,8 @@ public class MyTunesController
             return;
         }
 
-        String playlistName = tablePlaylists.getItems().get(selectedIndex);
+        // Use the selected playlist's name in the confirmation dialog.
+        String playlistName = tablePlaylists.getItems().get(selectedIndex).name;
 
         Alert confirmation = new Alert(
                 Alert.AlertType.CONFIRMATION,
@@ -377,7 +394,7 @@ public class MyTunesController
             if (selectedIndex >= 0)
             {
                 window.setTitle("Edit Playlist");
-                formController.fillForm(tablePlaylists.getItems().get(selectedIndex));
+                formController.fillForm(tablePlaylists.getItems().get(selectedIndex).name);
             }
             else
             {
@@ -395,13 +412,16 @@ public class MyTunesController
 
             if (selectedIndex >= 0)
             {
-                // Replace the name in the selected row.
-                tablePlaylists.getItems().set(selectedIndex, playlistName);
+                PlaylistRow oldPlaylist = tablePlaylists.getItems().get(selectedIndex);
+                PlaylistRow renamedPlaylist = new PlaylistRow(playlistName, oldPlaylist.songs);
+                tablePlaylists.getItems().set(selectedIndex, renamedPlaylist);
+                tablePlaylists.getSelectionModel().select(renamedPlaylist);
             }
             else
             {
-                // Add a row for the new playlist.
-                tablePlaylists.getItems().add(playlistName);
+                PlaylistRow newPlaylist = new PlaylistRow(playlistName, new ArrayList<>());
+                tablePlaylists.getItems().add(newPlaylist);
+                tablePlaylists.getSelectionModel().select(newPlaylist);
             }
         }
         catch (IOException e)
@@ -414,46 +434,39 @@ public class MyTunesController
     @FXML
     private void clickAddSongToPlaylist()
     {
-        // Read the selected playlist name from the left table.
-        String playlistName = tablePlaylists.getSelectionModel().getSelectedItem();
-
-        // Read the selected song from the right table.
+        PlaylistRow playlist = tablePlaylists.getSelectionModel().getSelectedItem();
         Song song = tableSongs.getSelectionModel().getSelectedItem();
 
-        if (playlistName == null || song == null)
+        if (playlist == null || song == null)
         {
             new Alert(Alert.AlertType.WARNING, "Select a playlist and a song.")
                     .showAndWait();
             return;
         }
 
-        // Check that the button receives both selections.
-        //System.out.println("Playlist: " + playlistName + ", song: " + song.getTitle()); //temporary
-
-        // Add the selected song and update the middle list.
-        testPlaylistSongs.add(song);
-        showPlaylistSongs(testPlaylistSongs);
-
-        // Recalculate the values shown in Songs and Time.
+        // Add the song to the selected playlist and refresh both views.
+        playlist.songs.add(song);
+        showPlaylistSongs(playlist.songs);
         tablePlaylists.refresh();
     }
+
 
     @FXML
     private void clickRemoveSongFromPlaylist()
     {
+        PlaylistRow playlist = tablePlaylists.getSelectionModel().getSelectedItem();
         int index = listPlaylistSongs.getSelectionModel().getSelectedIndex();
 
-        // Stop if no song is selected in the middle list.
-        if (index == -1)
+        // Remove a song only when both selections are valid.
+        if (playlist == null || index < 0 || index >= playlist.songs.size())
         {
             return;
         }
 
-        // Remove the song from the test playlist.
-        testPlaylistSongs.remove(index);
-        showPlaylistSongs(testPlaylistSongs);
+        playlist.songs.remove(index);
+        showPlaylistSongs(playlist.songs);
 
-        // Update the song count and total duration.
+        // Update the song count and total duration in the playlist table.
         tablePlaylists.refresh();
     }
 
@@ -471,19 +484,21 @@ public class MyTunesController
 
     private void movePlaylistSong(int direction)
     {
+        PlaylistRow playlist = tablePlaylists.getSelectionModel().getSelectedItem();
         int index = listPlaylistSongs.getSelectionModel().getSelectedIndex();
         int newIndex = index + direction;
 
-        // Stop if there is no selection or the new position is outside the list.
-        if (index == -1 || newIndex < 0 || newIndex >= testPlaylistSongs.size())
+        // Stop if no song is selected or the move would go past either end.
+        if (playlist == null || index < 0 || index >= playlist.songs.size()
+                || newIndex < 0 || newIndex >= playlist.songs.size())
         {
             return;
         }
 
-        // Move the song and keep it selected at its new position.
-        Song song = testPlaylistSongs.remove(index);
-        testPlaylistSongs.add(newIndex, song);
-        showPlaylistSongs(testPlaylistSongs);
+        // Move the song within the selected playlist and keep it selected.
+        Song song = playlist.songs.remove(index);
+        playlist.songs.add(newIndex, song);
+        showPlaylistSongs(playlist.songs);
         listPlaylistSongs.getSelectionModel().select(newIndex);
     }
 
@@ -556,6 +571,21 @@ public class MyTunesController
             {
                 int originalIndex = allSongs.indexOf(originalSong);
                 allSongs.set(originalIndex, savedSong);
+
+                // Keep playlist entries linked to the updated song.
+                for (PlaylistRow playlist : tablePlaylists.getItems())
+                {
+                    playlist.songs.replaceAll(song -> song == originalSong ? savedSong : song);
+                }
+
+                if (currentSong == originalSong)
+                {
+                    currentSong = savedSong;
+                }
+
+                PlaylistRow selectedPlaylist = tablePlaylists.getSelectionModel().getSelectedItem();
+                showPlaylistSongs(selectedPlaylist == null ? List.of() : selectedPlaylist.songs);
+                tablePlaylists.refresh();
             }
 
             refreshSongTable();
@@ -593,7 +623,36 @@ public class MyTunesController
         if (confirmation.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK)
         {
             allSongs.remove(selectedSong);
+
+            // Remove every occurrence of the song from all playlists.
+            for (PlaylistRow playlist : tablePlaylists.getItems())
+            {
+                playlist.songs.removeIf(song -> song == selectedSong);
+            }
+
+            // Release the loaded song so it cannot be resumed after deletion.
+            if (currentSong == selectedSong)
+            {
+                if (player != null)
+                {
+                    player.dispose();
+                    player = null;
+                }
+
+                currentSong = null;
+                btnPlay.setText("▶");
+                lblNowPlayingTitle.setText("No song selected");
+                lblNowPlayingArtist.setText("Unknown artist");
+                lblElapsedTime.setText("0:00");
+                lblTotalTime.setText("0:00");
+                sliderPlayback.setValue(0);
+            }
+
+            // Refresh the song table, the selected playlist and its totals.
             refreshSongTable();
+            PlaylistRow selectedPlaylist = tablePlaylists.getSelectionModel().getSelectedItem();
+            showPlaylistSongs(selectedPlaylist == null ? List.of() : selectedPlaylist.songs);
+            tablePlaylists.refresh();
         }
     }
 }
