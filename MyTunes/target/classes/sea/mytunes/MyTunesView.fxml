@@ -19,18 +19,18 @@
             <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
          </padding>
          <children>
-            <Button mnemonicParsing="false" text="⏮" />
-            <Button mnemonicParsing="false" text="▶" />
-            <Button mnemonicParsing="false" text="⏭" />
+            <Button mnemonicParsing="false" onAction="#clickPrevious" text="⏮" />
+            <Button fx:id="btnPlay" maxHeight="28.0" maxWidth="32.0" minHeight="28.0" minWidth="32.0" mnemonicParsing="false" onAction="#clickPlay" prefHeight="28.0" prefWidth="32.0" text="▶" />
+            <Button mnemonicParsing="false" onAction="#clickNext" text="⏭" />
             <VBox alignment="CENTER_LEFT" prefHeight="200.0" prefWidth="100.0">
                <children>
-                  <Label text="No song selected" />
-                  <Label text="Unknown artist" />
+                  <Label fx:id="lblNowPlayingTitle" text="No song selected" />
+                  <Label fx:id="lblNowPlayingArtist" text="Unknown artist" />
                </children>
             </VBox>
-            <Label text="0:00" />
-            <Slider prefWidth="350.0" HBox.hgrow="ALWAYS" />
-            <Label text="0:00" />
+            <Label fx:id="lblElapsedTime" text="0:00" />
+            <Slider fx:id="sliderPlayback" prefWidth="350.0" HBox.hgrow="ALWAYS" />
+            <Label fx:id="lblTotalTime" text="0:00" />
          </children>
       </HBox>
    </top>
@@ -68,9 +68,9 @@
             <ListView fx:id="listPlaylistSongs" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
             <HBox alignment="CENTER_LEFT" prefHeight="35.0" prefWidth="200.0" spacing="8.0">
                <children>
-                  <Button mnemonicParsing="false" text="↑" />
-                  <Button mnemonicParsing="false" text="↓" />
-                  <Button mnemonicParsing="false" text="Delete" />
+                  <Button mnemonicParsing="false" onAction="#clickMoveSongUp" text="↑" />
+                  <Button mnemonicParsing="false" onAction="#clickMoveSongDown" text="↓" />
+                  <Button mnemonicParsing="false" onAction="#clickRemoveSongFromPlaylist" text="Delete" />
                   <Button mnemonicParsing="false" onAction="#clickAddSongToPlaylist" text="←" />
                </children>
             </HBox>
@@ -92,10 +92,10 @@
             </HBox>
             <TableView fx:id="tableSongs" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
               <columns>
-                <TableColumn fx:id="colTitle" prefWidth="155.0" text="Title" />
+                <TableColumn fx:id="colTitle" prefWidth="150.0" text="Title" />
                 <TableColumn fx:id="colArtist" prefWidth="150.0" text="Artist" />
                   <TableColumn fx:id="colCategory" prefWidth="100.0" text="Category" />
-                  <TableColumn fx:id="colTime" prefWidth="60.0" text="Time" />
+                  <TableColumn fx:id="colTime" prefWidth="70.0" text="Time" />
               </columns>
             </TableView>
             <HBox alignment="CENTER_LEFT" prefHeight="35.0" prefWidth="200.0" spacing="8.0">

@@ -5,10 +5,14 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import sea.mytunes.be.Song;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +45,23 @@ public class MyTunesController
     // An empty search means the table shows all songs.
     private String activeSearch = "";
 
+    @FXML private Button btnPlay;
+    @FXML private Label lblNowPlayingTitle;
+    @FXML private Label lblNowPlayingArtist;
+    @FXML private Label lblElapsedTime;
+    @FXML private Label lblTotalTime;
+    @FXML private Slider sliderPlayback;
+
+    // Keep the player and the song loaded in it.
+    private MediaPlayer player;
+    private Song currentSong;
+
     @FXML
     private void initialize()
     {
+        tableSongs.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        tablePlaylists.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+
         // Tell each column which song value to display.
         colTitle.setCellValueFactory(cell ->
                 new SimpleStringProperty(cell.getValue().getTitle()));
@@ -140,6 +158,144 @@ public class MyTunesController
 
         // Keep the sort chosen through the table headers.
         tableSongs.sort();
+    }
+
+    @FXML
+    private void clickPlay()
+    {
+        Song selectedSong = tableSongs.getSelectionModel().getSelectedItem();
+
+        // Pause or resume the song already loaded in the player.
+        if (player != null && (selectedSong == null || selectedSong == currentSong))
+        {
+            if (player.getStatus() == MediaPlayer.Status.PLAYING)
+            {
+                player.pause();
+            }
+            else
+            {
+                player.play();
+            }
+            return;
+        }
+
+        if (selectedSong == null)
+        {
+            return;
+        }
+
+        String path = selectedSong.getFilePath();
+        if (path == null || path.isBlank() || !new File(path).isFile())
+        {
+            new Alert(Alert.AlertType.WARNING, "Choose an audio file for this song first.")
+                    .showAndWait();
+            return;
+        }
+
+        try
+        {
+            // Open the audio file chosen in the song form.
+            Media media = new Media(new File(path).toURI().toString());
+            MediaPlayer newPlayer = new MediaPlayer(media);
+
+            if (player != null)
+            {
+                player.dispose();
+            }
+
+            player = newPlayer;
+            currentSong = selectedSong;
+
+            lblElapsedTime.setText("0:00");
+            lblTotalTime.setText("0:00");
+            sliderPlayback.setValue(0);
+            btnPlay.setText("▶");
+
+            // Read the real duration once the audio file is ready.
+            newPlayer.setOnReady(() -> {
+                double total = newPlayer.getTotalDuration().toSeconds();
+                if (Double.isFinite(total) && total > 0)
+                {
+                    sliderPlayback.setMax(total);
+                    lblTotalTime.setText(formatPlaybackTime(total));
+                }
+            });
+
+            // Update the time and progress as the audio plays.
+            newPlayer.currentTimeProperty().addListener((property, oldTime, newTime) -> {
+                double elapsed = newTime.toSeconds();
+                lblElapsedTime.setText(formatPlaybackTime(elapsed));
+                sliderPlayback.setValue(elapsed);
+            });
+
+            newPlayer.setOnPlaying(() -> {
+                lblNowPlayingTitle.setText(selectedSong.getTitle());
+                lblNowPlayingArtist.setText(selectedSong.getArtist());
+                btnPlay.setText("⏸");
+            });
+            newPlayer.setOnPaused(() -> btnPlay.setText("▶"));
+            newPlayer.setOnStopped(() -> btnPlay.setText("▶"));
+            newPlayer.setOnEndOfMedia(newPlayer::stop);
+            newPlayer.setOnError(() -> {
+                if (player == newPlayer)
+                {
+                    newPlayer.dispose();
+                    player = null;
+                    currentSong = null;
+                    btnPlay.setText("▶");
+                    new Alert(Alert.AlertType.ERROR, "Could not play this audio file.")
+                            .showAndWait();
+                }
+            });
+
+            newPlayer.play();
+        }
+        catch (RuntimeException e)
+        {
+            new Alert(Alert.AlertType.ERROR, "Could not open this audio file.")
+                    .showAndWait();
+        }
+    }
+
+    @FXML
+    private void clickPrevious()
+    {
+        playNeighborSong(-1);
+    }
+
+    @FXML
+    private void clickNext()
+    {
+        playNeighborSong(1);
+    }
+
+    private void playNeighborSong(int direction)
+    {
+        // Find the current song in the visible order of All songs.
+        int currentIndex = tableSongs.getItems().indexOf(currentSong);
+        if (currentIndex == -1)
+        {
+            return;
+        }
+
+        int nextIndex = currentIndex + direction;
+
+        // Stop at the first or last row.
+        if (nextIndex < 0 || nextIndex >= tableSongs.getItems().size())
+        {
+            return;
+        }
+
+        // Select the neighboring song and use the existing playback code.
+        tableSongs.getSelectionModel().select(nextIndex);
+        clickPlay();
+    }
+
+    private String formatPlaybackTime(double time)
+    {
+        // For example, 84 seconds becomes 1:24.
+        long totalSeconds = (long) time;
+        return String.format("%d:%02d", totalSeconds / 60, totalSeconds % 60);
     }
 
     @FXML
@@ -280,6 +436,55 @@ public class MyTunesController
 
         // Recalculate the values shown in Songs and Time.
         tablePlaylists.refresh();
+    }
+
+    @FXML
+    private void clickRemoveSongFromPlaylist()
+    {
+        int index = listPlaylistSongs.getSelectionModel().getSelectedIndex();
+
+        // Stop if no song is selected in the middle list.
+        if (index == -1)
+        {
+            return;
+        }
+
+        // Remove the song from the test playlist.
+        testPlaylistSongs.remove(index);
+        showPlaylistSongs(testPlaylistSongs);
+
+        // Update the song count and total duration.
+        tablePlaylists.refresh();
+    }
+
+    @FXML
+    private void clickMoveSongUp()
+    {
+        movePlaylistSong(-1);
+    }
+
+    @FXML
+    private void clickMoveSongDown()
+    {
+        movePlaylistSong(1);
+    }
+
+    private void movePlaylistSong(int direction)
+    {
+        int index = listPlaylistSongs.getSelectionModel().getSelectedIndex();
+        int newIndex = index + direction;
+
+        // Stop if there is no selection or the new position is outside the list.
+        if (index == -1 || newIndex < 0 || newIndex >= testPlaylistSongs.size())
+        {
+            return;
+        }
+
+        // Move the song and keep it selected at its new position.
+        Song song = testPlaylistSongs.remove(index);
+        testPlaylistSongs.add(newIndex, song);
+        showPlaylistSongs(testPlaylistSongs);
+        listPlaylistSongs.getSelectionModel().select(newIndex);
     }
 
     private void showPlaylistSongs(List<Song> songs)

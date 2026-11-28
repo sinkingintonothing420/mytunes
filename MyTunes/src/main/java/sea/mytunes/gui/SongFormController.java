@@ -5,8 +5,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.media.Media;
 import javafx.stage.FileChooser;
 import sea.mytunes.be.Song;
+import javafx.scene.media.MediaPlayer;
 
 import java.io.File;
 
@@ -53,7 +55,70 @@ public class SongFormController
         if (selectedFile != null)
         {
             txtFile.setText(selectedFile.getAbsolutePath());
+            fillAudioDetails(selectedFile);
         }
+    }
+
+    private void fillAudioDetails(File file) {
+        String path = file.getAbsolutePath();
+
+        try
+        {
+            Media media = new Media(file.toURI().toString());
+            MediaPlayer reader = new MediaPlayer(media);
+
+            // Release this temporary player if the file cannot be read.
+            reader.setOnError(reader::dispose);
+
+            // Wait until JavaFX has read the file details.
+            reader.setOnReady(() -> {
+                try
+                {
+                    // Ignore the result if the user has chosen a different file.
+                    if (!path.equals(txtFile.getText()))
+                    {
+                        return;
+                    }
+
+                    String fileName = file.getName().replaceFirst("\\.[^.]+$", "");
+
+                    txtTitle.setText(readTag(media, "title", fileName));
+                    txtArtist.setText(readTag(media, "artist", txtArtist.getText()));
+                    txtCategory.setText(readTag(media, "genre", txtCategory.getText()));
+
+                    // Convert the duration to the format used by the form.
+                    double duration = reader.getTotalDuration().toSeconds();
+                    if (Double.isFinite(duration) && duration > 0)
+                    {
+                        long seconds = (long) duration;
+                        txtTime.setText(String.format("%d:%02d", seconds / 60, seconds % 60));
+                    }
+                }
+                finally
+                {
+                    reader.dispose();
+                }
+            });
+        }
+        catch (javafx.scene.media.MediaException e)
+        {
+            new Alert(Alert.AlertType.WARNING,
+                    "Could not read the audio details. You can enter them manually.")
+                    .showAndWait();
+        }
+    }
+
+    private String readTag(Media media, String key, String fallback)
+    {
+        // Use the fallback when this information is missing from the file.
+        Object value = media.getMetadata().get(key);
+        if (value instanceof String text && !text.isBlank())
+        {
+            return text;
+        }
+
+        return fallback;
+        
     }
 
     private Song savedSong;
