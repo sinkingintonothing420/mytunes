@@ -41,18 +41,18 @@
          </padding>
          <children>
             <Label text="Playlists" />
-            <TableView prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+            <TableView fx:id="tablePlaylists" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
               <columns>
-                <TableColumn prefWidth="110.0" text="Name" />
-                <TableColumn prefWidth="55.0" text="Songs" />
-                  <TableColumn prefWidth="55.0" text="Time" />
+                <TableColumn fx:id="colPlaylistName" prefWidth="110.0" text="Name" />
+                <TableColumn fx:id="colPlaylistSongs" prefWidth="55.0" text="Songs" />
+                  <TableColumn fx:id="colPlaylistTime" prefWidth="55.0" text="Time" />
               </columns>
             </TableView>
             <HBox alignment="CENTER_LEFT" prefHeight="35.0" prefWidth="200.0" spacing="8.0">
                <children>
-                  <Button mnemonicParsing="false" text="New" />
-                  <Button mnemonicParsing="false" text="Edit" />
-                  <Button mnemonicParsing="false" text="Delete" />
+                  <Button mnemonicParsing="false" onAction="#clickNewPlaylist" text="New" />
+                  <Button mnemonicParsing="false" onAction="#clickEditPlaylist" text="Edit" />
+                  <Button mnemonicParsing="false" onAction="#clickDeletePlaylist" text="Delete" />
                </children>
             </HBox>
          </children>
@@ -65,13 +65,13 @@
          </padding>
          <children>
             <Label text="Songs in playlist" />
-            <ListView prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
+            <ListView fx:id="listPlaylistSongs" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
             <HBox alignment="CENTER_LEFT" prefHeight="35.0" prefWidth="200.0" spacing="8.0">
                <children>
                   <Button mnemonicParsing="false" text="↑" />
                   <Button mnemonicParsing="false" text="↓" />
                   <Button mnemonicParsing="false" text="Delete" />
-                  <Button mnemonicParsing="false" text="←" />
+                  <Button mnemonicParsing="false" onAction="#clickAddSongToPlaylist" text="←" />
                </children>
             </HBox>
          </children>
@@ -95,7 +95,7 @@
                 <TableColumn fx:id="colTitle" prefWidth="155.0" text="Title" />
                 <TableColumn fx:id="colArtist" prefWidth="150.0" text="Artist" />
                   <TableColumn fx:id="colCategory" prefWidth="100.0" text="Category" />
-                  <TableColumn fx:id="colTime" prefWidth="60.0" text="Time" style="-fx-alignment: CENTER;" />
+                  <TableColumn fx:id="colTime" prefWidth="60.0" text="Time" />
               </columns>
             </TableView>
             <HBox alignment="CENTER_LEFT" prefHeight="35.0" prefWidth="200.0" spacing="8.0">
